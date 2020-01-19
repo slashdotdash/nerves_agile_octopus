@@ -57,6 +57,10 @@ defmodule NervesAgileOctopus.MixProject do
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
       {:nerves_system_bbb, "~> 2.5", runtime: false, targets: :bbb},
       {:nerves_system_x86_64, "~> 1.10", runtime: false, targets: :x86_64},
+
+      # Inky pHAT display
+      {:inky, "~> 1.0"},
+      {:inky_host_dev, "~> 1.0", targets: :host, only: :dev}
     ]
   end
 
