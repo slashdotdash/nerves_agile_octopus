@@ -29,3 +29,12 @@ Or:
 ```
 MIX_TARGET=<target> mix do deps.get, firmware, firmware.burn
 ```
+
+### Deploying firmware to host via SSH
+
+```
+export MIX_TARGET=my_target
+mix deps.get
+mix firmware
+./upload.sh
+```

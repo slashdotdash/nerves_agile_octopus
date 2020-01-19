@@ -1,18 +1,34 @@
 defmodule NervesAgileOctopus do
-  @moduledoc """
-  Documentation for NervesAgileOctopus.
-  """
+  @behaviour NervesAgileOctopus.Impl
 
-  @doc """
-  Hello world.
+  @implementation Application.get_env(
+                    :nerves_agile_octopus,
+                    __MODULE__,
+                    NervesAgileOctopus.ApiImpl
+                  )
 
-  ## Examples
+  defdelegate fetch_unit_rates, to: @implementation
 
-      iex> NervesAgileOctopus.hello
-      :world
+  defmodule FileImpl do
+    @behaviour NervesAgileOctopus.Impl
 
-  """
-  def hello do
-    :world
+    def fetch_unit_rates do
+      "priv/agile_octopus_unit_rates.json"
+      |> File.read!()
+      |> Jason.decode!()
+    end
+  end
+
+  defmodule ApiImpl do
+    @behaviour NervesAgileOctopus.Impl
+
+    def fetch_unit_rates do
+      url =
+        'https://api.octopus.energy/v1/products/AGILE-18-02-21/electricity-tariffs/E-1R-AGILE-18-02-21-H/standard-unit-rates/'
+
+      {:ok, {{'HTTP/1.1', 200, 'OK'}, _headers, body}} = :httpc.request(:get, {url, []}, [], [])
+
+      Jason.decode!(body)
+    end
   end
 end

@@ -31,7 +31,7 @@ defmodule NervesAgileOctopus.MixProject do
   def application do
     [
       mod: {NervesAgileOctopus.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :inets, :ssl]
     ]
   end
 

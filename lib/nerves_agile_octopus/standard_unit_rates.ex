@@ -17,9 +17,7 @@ defmodule NervesAgileOctopus.StandardUnitRates do
   @impl GenServer
   def handle_continue(:fetch_unit_rates, _state) do
     unit_rates =
-      "priv/agile_octopus_unit_rates.json"
-      |> File.read!()
-      |> Jason.decode!()
+      NervesAgileOctopus.fetch_unit_rates()
       |> Map.fetch!("results")
       |> parse_unit_rates()
       |> Enum.sort_by(& &1.valid_from)

@@ -13,34 +13,23 @@ defmodule NervesAgileOctopus.Scenes.Main do
   def init(_args, _opts) do
     {:ok, unit_rates} = NervesAgileOctopus.StandardUnitRates.list_unit_rates()
 
-    # graph =
-    #   Graph.build(font_size: @font_size, font: @font, theme: :light)
-    #   |> rectangle({212, 32}, fill: :red)
-    #   |> rectangle({212, 64}, t: {0, 32}, fill: :white)
-    #   |> rectangle({212, 8}, t: {0, 32 + 64}, fill: :red)
-    #   |> do_aligned_text("HELLO", :white, @font_size + 6, 212, 20)
-    #   |> do_aligned_text("my name is", :white, @font_size - 8, 212, 28)
-    #   |> do_aligned_text("Inky", :black, @font_size + 32, 212, 80)
+    from = DateTime.utc_now() |> DateTime.add(-:timer.minutes(30), :millisecond)
 
-    graph = Graph.build(font_size: @font_size, font: @font, theme: :light)
+    unit_rates = Enum.filter(unit_rates, fn unit_rate -> after?(unit_rate.valid_from, from) end)
+
+    max_value_inc_vat =
+      case Enum.max_by(unit_rates, & &1.value_inc_vat) do
+        %{value_inc_vat: value_inc_vat} -> value_inc_vat
+        nil -> 35.0
+      end
+
+    pixels_per_value = round(@height / max_value_inc_vat)
 
     graph =
-      unit_rates
-      |> Enum.with_index()
-      |> Enum.reduce(graph, fn {unit_rate, index}, graph ->
-        height = round(unit_rate.value_inc_vat * 4)
-
-        fill =
-          cond do
-            unit_rate.value_inc_vat >= 20 -> :red
-            unit_rate.value_inc_vat >= 8 -> :black
-            true -> :white
-          end
-
-        graph
-        |> rectangle({4, -height}, t: {index * 4, 104}, fill: fill)
-        |> rectangle({4, -height}, t: {index * 4, 104}, stroke: {1, :black})
-      end)
+      Graph.build(font_size: @font_size, font: @font, theme: :light)
+      |> rectangle({@width, @height}, fill: :white)
+      |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_value)
+      |> draw_current_price(hd(unit_rates), pixels_per_value)
 
     state = %{
       graph: graph
@@ -49,12 +38,64 @@ defmodule NervesAgileOctopus.Scenes.Main do
     {:ok, state, push: graph}
   end
 
-  defp do_aligned_text(graph, text, fill, font_size, width, vpos) do
-    text(graph, text,
-      font_size: font_size,
-      fill: fill,
-      translate: {width / 2, vpos},
-      text_align: :center
+  defp after?(datetime1, datetime2) do
+    case DateTime.compare(datetime1, datetime2) do
+      :gt -> true
+      :eq -> true
+      :lt -> false
+    end
+  end
+
+  defp draw_current_price(graph, nil, _pixels_per_value), do: graph
+
+  defp draw_current_price(graph, unit_rate, pixels_per_value) do
+    %{value_inc_vat: value_inc_vat} = unit_rate
+
+    y = @height - round(value_inc_vat * pixels_per_value)
+
+    graph
+    |> line({{2, 10}, {2, y}}, stroke: {1, :black})
+    |> line({{2, 10}, {15, 10}}, stroke: {1, :black})
+    |> text("#{value_inc_vat}p",
+      font_size: 16,
+      fill: :black,
+      translate: {15, 15},
+      text_align: :left
     )
+  end
+
+  defp plot_chart(graph, unit_rates, max_value_inc_vat, pixels_per_value) do
+    graph =
+      [0, 5, 10, 15, 20, 25, 30, 35]
+      |> Enum.filter(&(&1 <= max_value_inc_vat))
+      |> Enum.reduce(graph, fn index, graph ->
+        graph
+        |> line({{0, index * pixels_per_value}, {@width, index * pixels_per_value}},
+          stroke: {1, :black}
+        )
+        |> text("#{index}p",
+          font_size: 12,
+          fill: :black,
+          translate: {@width, @height - 5 - index * pixels_per_value},
+          text_align: :right
+        )
+      end)
+
+    unit_rates
+    |> Enum.with_index()
+    |> Enum.reduce(graph, fn {unit_rate, index}, graph ->
+      height = round(unit_rate.value_inc_vat * pixels_per_value)
+
+      fill =
+        cond do
+          unit_rate.value_inc_vat >= 20 -> :red
+          unit_rate.value_inc_vat >= 8 -> :black
+          true -> :white
+        end
+
+      graph
+      |> rectangle({4, -height}, t: {index * 4, @height}, fill: fill)
+      |> rectangle({4, -height}, t: {index * 4, @height}, stroke: {1, :black})
+    end)
   end
 end

@@ -24,7 +24,12 @@ config :nerves_agile_octopus, :viewport, %{
 # involved with firmware updates.
 
 config :shoehorn,
-  init: [:nerves_runtime, :nerves_init_gadget],
+  init: [
+    :nerves_runtime,
+    :nerves_network,
+    :nerves_init_gadget,
+    {SystemCheck, :ensure_environment, []}
+  ],
   app: Mix.Project.config()[:app]
 
 # Nerves Runtime can enumerate hardware devices and send notifications via
@@ -80,6 +85,8 @@ config :nerves_init_gadget,
 # Configure wireless settings
 
 key_mgmt = System.get_env("NERVES_NETWORK_KEY_MGMT") || "WPA-PSK"
+
+config :nerves_network, regulatory_domain: "GB"
 
 config :nerves_network, :default,
   wlan0: [
