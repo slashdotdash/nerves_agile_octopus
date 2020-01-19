@@ -30,8 +30,11 @@ defmodule NervesAgileOctopus.Application do
   # end
 
   def children(_target) do
+    main_viewport_config = Application.get_env(:nerves_agile_octopus, :viewport)
+
     [
-      NervesAgileOctopus.InkyDisplay
+      NervesAgileOctopus.StandardUnitRates,
+      {Scenic, viewports: [main_viewport_config]}
     ]
   end
 

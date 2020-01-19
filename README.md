@@ -17,3 +17,15 @@ To start your Nerves app:
   * Install dependencies with `mix deps.get`
   * Create firmware with `mix firmware`
   * Burn to an SD card with `mix firmware.burn`
+
+In a single command:
+
+```
+mix do deps.get, firmware, firmware.burn
+```
+
+Or:
+
+```
+MIX_TARGET=<target> mix do deps.get, firmware, firmware.burn
+```

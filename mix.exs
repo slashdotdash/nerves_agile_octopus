@@ -43,10 +43,12 @@ defmodule NervesAgileOctopus.MixProject do
       {:shoehorn, "~> 0.6"},
       {:ring_logger, "~> 0.6"},
       {:toolshed, "~> 0.2"},
+      {:jason, "~> 1.1"},
 
       # Dependencies for all targets except :host
       {:nerves_runtime, "~> 0.6", targets: @all_targets},
       {:nerves_init_gadget, "~> 0.4", targets: @all_targets},
+      {:nerves_firmware_ssh, "~> 0.4", targets: @all_targets},
 
       # Dependencies for specific targets
       {:nerves_system_rpi, "~> 1.10", runtime: false, targets: :rpi},
@@ -60,7 +62,12 @@ defmodule NervesAgileOctopus.MixProject do
 
       # Inky pHAT display
       {:inky, "~> 1.0"},
-      {:inky_host_dev, "~> 1.0", targets: :host, only: :dev}
+      {:inky_host_dev, "~> 1.0", targets: :host, only: :dev},
+
+      # Scenic
+      {:scenic, "~> 0.10"},
+      {:scenic_driver_inky, "~> 1.0", targets: [:rpi, :rpi0, :rpi2, :rpi3, :rpi3a]},
+      {:scenic_driver_glfw, "~> 0.10", targets: :host}
     ]
   end
 

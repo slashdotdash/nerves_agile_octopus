@@ -1,5 +1,24 @@
 import Config
 
+config :nerves_agile_octopus, :viewport, %{
+  name: :main_viewport,
+  default_scene: {NervesAgileOctopus.Scenes.Main, nil},
+  size: {212, 104},
+  opts: [scale: 1.0],
+  drivers: [
+    %{
+      module: ScenicDriverInky,
+      opts: [
+        type: :phat,
+        accent: :red,
+        opts: %{
+          border: :black
+        }
+      ]
+    }
+  ]
+}
+
 # Use shoehorn to start the main application. See the shoehorn
 # docs for separating out critical OTP applications such as those
 # involved with firmware updates.
