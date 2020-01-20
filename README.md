@@ -12,6 +12,12 @@ Each time block is coloured based upon its electricity cost:
 - Black (8-20p/kWh)
 - Red (> 20p/kWh)
 
+### Example
+
+Running on an Inky pHAT red display connected to a Raspberry Pi 2 Model B.
+
+![Nerves Agile Octopus on Raspberry Pi 2](assets/nerves_agile_octopus_rpi2.jpg "Nerves Agile Octopus on Raspberry Pi 2")
+
 ## Prerequisites
 
 - Install Elixir.
@@ -19,7 +25,7 @@ Each time block is coloured based upon its electricity cost:
 
 ### Configure wireless networking
 
-The `config/target.exs` file used to configure the target devices expects the following two environment variables to be set to configure the wireless settings used when building the firmware image.:
+The `config/target.exs` file used to configure the target device expects the following two environment variables to be set to configure the wireless settings used when building the firmware image:
 
 ```
 export NERVES_NETWORK_SSID="<SSID>"
