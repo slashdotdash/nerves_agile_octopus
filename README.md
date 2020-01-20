@@ -4,7 +4,15 @@ Display [Agile Octopus](https://octopus.energy/agile/) electricity prices on an 
 
 ![Nerves Agile Octopus](assets/nerves_agile_octopus.png "Nerves Agile Octopus")
 
-Agile prices are fetched from the Octopus API each day at 16:01. Prices for the next 24hrs, in half hourly blocks, are shown. The left hand block is the current price which is also labelled with the time period. The prices are updated every half an hour.
+The display shows the half-hourly Agile Octopus electricity prices to  help shift your energy use outside the 4-7pm tariff peak and identify cheap electricity periods to save money.
+
+The three hour peak period incurs a 12p/kWh surcharge whereas overnight it can drop significantly. It can go down to almost zero when demand is low and weather conditions are favourable for renewables.
+
+Not yet an Octopus Energy customer? You can [sign up using this referral link to get a £50 credit for you](https://share.octopus.energy/straw-ibex-344) (and me).
+
+### How does it work?
+
+Agile prices are fetched from the Octopus API each day at 16:01. Prices for the next 24hrs, in half hourly blocks, are shown. The left hand block is the current price which is also labelled with the time period. The display is updated every half an hour.
 
 Each time block is coloured based upon its electricity cost:
 
