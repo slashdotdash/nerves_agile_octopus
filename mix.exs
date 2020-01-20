@@ -42,6 +42,7 @@ defmodule NervesAgileOctopus.MixProject do
       {:nerves, "~> 1.5.0", runtime: false},
       {:shoehorn, "~> 0.6"},
       {:ring_logger, "~> 0.6"},
+      {:timex, "~> 3.6"},
       {:toolshed, "~> 0.2"},
       {:jason, "~> 1.1"},
 

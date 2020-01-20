@@ -4,18 +4,40 @@ defmodule NervesAgileOctopus.Scenes.Main do
   import Scenic.Primitives
 
   alias Scenic.Graph
+  alias NervesAgileOctopus.StandardUnitRates
 
   @font :roboto
   @font_size 20
   @width 212
   @height 104
 
+  @impl Scenic.Scene
   def init(_args, _opts) do
-    {:ok, unit_rates} = NervesAgileOctopus.StandardUnitRates.list_unit_rates()
+    :ok = StandardUnitRates.subscribe_unit_rates()
+
+    {:ok, %{unit_rates: []}}
+  end
+
+  @impl Scenic.Scene
+  def handle_info({:agile_standard_unit_rates, unit_rates}, state) do
+    state |> Map.put(:unit_rates, unit_rates) |> render_unit_rates()
+  end
+
+  @impl Scenic.Scene
+  def handle_info(:render_unit_rates, state) do
+    render_unit_rates(state)
+  end
+
+  defp render_unit_rates(state) do
+    unit_rates = Map.get(state, :unit_rates, [])
 
     from = DateTime.utc_now() |> DateTime.add(-:timer.minutes(30), :millisecond)
 
-    unit_rates = Enum.filter(unit_rates, fn unit_rate -> after?(unit_rate.valid_from, from) end)
+    unit_rates =
+      unit_rates
+      |> Enum.filter(fn unit_rate -> after?(unit_rate.valid_from, from) end)
+      # Only take next 24hrs worth of data
+      |> Enum.take(48)
 
     max_value_inc_vat =
       case Enum.max_by(unit_rates, & &1.value_inc_vat) do
@@ -31,11 +53,11 @@ defmodule NervesAgileOctopus.Scenes.Main do
       |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_value)
       |> draw_current_price(hd(unit_rates), pixels_per_value)
 
-    state = %{
-      graph: graph
-    }
+    state = Map.put(state, :graph, graph)
 
-    {:ok, state, push: graph}
+    schedule_refresh()
+
+    {:noreply, state, push: graph}
   end
 
   defp after?(datetime1, datetime2) do
@@ -53,15 +75,25 @@ defmodule NervesAgileOctopus.Scenes.Main do
 
     y = @height - round(value_inc_vat * pixels_per_value)
 
+    {:ok, from} = Timex.format(unit_rate.valid_from, "{h24}:{m}")
+    {:ok, to} = Timex.format(unit_rate.valid_to, "{h24}:{m}")
+
     graph
     |> line({{2, 10}, {2, y}}, stroke: {1, :black})
     |> line({{2, 10}, {15, 10}}, stroke: {1, :black})
-    |> text("#{value_inc_vat}p",
+    |> text("#{value_inc_vat}p  #{from}-#{to}",
       font_size: 16,
       fill: :black,
       translate: {15, 15},
       text_align: :left
     )
+
+    # |> text("#{from}-#{to}",
+    #   font_size: 12,
+    #   fill: :black,
+    #   translate: {40, 15},
+    #   text_align: :left
+    # )
   end
 
   defp plot_chart(graph, unit_rates, max_value_inc_vat, pixels_per_value) do
@@ -70,13 +102,14 @@ defmodule NervesAgileOctopus.Scenes.Main do
       |> Enum.filter(&(&1 <= max_value_inc_vat))
       |> Enum.reduce(graph, fn index, graph ->
         graph
-        |> line({{0, index * pixels_per_value}, {@width, index * pixels_per_value}},
+        |> line(
+          {{0, @height - index * pixels_per_value}, {@width, @height - index * pixels_per_value}},
           stroke: {1, :black}
         )
-        |> text("#{index}p",
+        |> text("#{index}",
           font_size: 12,
           fill: :black,
-          translate: {@width, @height - 5 - index * pixels_per_value},
+          translate: {@width - 1, @height - 2 - index * pixels_per_value},
           text_align: :right
         )
       end)
@@ -97,5 +130,22 @@ defmodule NervesAgileOctopus.Scenes.Main do
       |> rectangle({4, -height}, t: {index * 4, @height}, fill: fill)
       |> rectangle({4, -height}, t: {index * 4, @height}, stroke: {1, :black})
     end)
+  end
+
+  # Refresh graph every 30 minutes.
+  defp schedule_refresh do
+    now = DateTime.utc_now()
+
+    half_past = Timex.set(now, minute: 30, second: 0)
+    next_hour = now |> Timex.shift(hours: 1) |> Timex.set(minute: 0, second: 0)
+
+    interval =
+      if Timex.after?(half_past, now) do
+        Timex.diff(half_past, now, :milliseconds)
+      else
+        Timex.diff(next_hour, now, :milliseconds)
+      end
+
+    Process.send_after(self(), :render_unit_rates, interval + 1_000)
   end
 end
