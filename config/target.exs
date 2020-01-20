@@ -27,15 +27,6 @@ config :shoehorn,
   init: [:nerves_runtime, :nerves_network, :nerves_init_gadget],
   app: Mix.Project.config()[:app]
 
-# config :shoehorn,
-#   init: [
-#     :nerves_runtime,
-#     :nerves_network,
-#     :nerves_init_gadget,
-#     {SystemCheck, :ensure_environment, []}
-#   ],
-#   app: Mix.Project.config()[:app]
-
 # Nerves Runtime can enumerate hardware devices and send notifications via
 # SystemRegistry. This slows down startup and not many programs make use of
 # this feature.

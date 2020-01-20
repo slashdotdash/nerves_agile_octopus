@@ -12,16 +12,29 @@ Each time block is coloured based upon its electricity cost:
 - Black (8-20p/kWh)
 - Red (> 20p/kWh)
 
-## Targets
+## Prerequisites
+
+- Install Elixir.
+- Supported [nerves device](https://nerves-project.org/) (e.g. a Raspberry Pi) - _or you can just run it locally_.
+
+### Configure wireless networking
+
+The `config/target.exs` file used to configure the target devices expects the following two environment variables to be set to configure the wireless settings used when building the firmware image.:
+
+```
+export NERVES_NETWORK_SSID="<SSID>"
+export NERVES_NETWORK_PSK="<PASSWORD>"
+```
+
+### Targets
 
 Nerves applications produce images for hardware targets based on the `MIX_TARGET` environment variable. If `MIX_TARGET` is unset, `mix` builds an
 image that runs on the host (e.g., your laptop). This is useful for executing logic tests, running utilities, and debugging. Other targets are represented by a short name like `rpi3` that maps to a Nerves system image for that platform. All of this logic is in the generated `mix.exs` and may be customized. For more information about targets see: https://hexdocs.pm/nerves/targets.html#content
 
 ## Getting Started
 
-To start your Nerves app:
-  * `export MIX_TARGET=my_target` or prefix every command with
-    `MIX_TARGET=my_target`. For example, `MIX_TARGET=rpi3`
+To start the Nerves app:
+  * `export MIX_TARGET=my_target` or prefix every command with `MIX_TARGET=my_target`. For example, `MIX_TARGET=rpi3`
   * Install dependencies with `mix deps.get`
   * Create firmware with `mix firmware`
   * Burn to an SD card with `mix firmware.burn`
@@ -39,7 +52,11 @@ Or:
 MIX_TARGET=<target> mix do deps.get, firmware, firmware.burn
 ```
 
+Now put the SD card into your device and turn it on.
+
 ### Deploying firmware to host device via SSH
+
+Once the nerves device is running and connected to the network you can push new firmware updates using SSH. It's much quicker than burning to an SD card.
 
 First, generate an `upload.sh` script:
 
