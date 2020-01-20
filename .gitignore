@@ -19,3 +19,6 @@
 erl_crash.dump
 
 .env
+
+/priv/agile_octopus_unit_rates.json
+upload.sh
