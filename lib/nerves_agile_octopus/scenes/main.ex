@@ -29,35 +29,41 @@ defmodule NervesAgileOctopus.Scenes.Main do
   end
 
   defp render_unit_rates(state) do
-    unit_rates = Map.get(state, :unit_rates, [])
+    unit_rates = applicable_unit_rates(state)
 
+    unless unit_rates == [] do
+      max_value_inc_vat =
+        case Enum.max_by(unit_rates, & &1.value_inc_vat) do
+          %{value_inc_vat: value_inc_vat} -> value_inc_vat
+          nil -> 35.0
+        end
+
+      pixels_per_value = round(@height / max_value_inc_vat)
+
+      graph =
+        Graph.build(font_size: @font_size, font: @font, theme: :light)
+        |> rectangle({@width, @height}, fill: :white)
+        |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_value)
+        |> draw_current_price(hd(unit_rates), pixels_per_value)
+
+      state = Map.put(state, :graph, graph)
+
+      schedule_refresh()
+
+      {:noreply, state, push: graph}
+    else
+      {:noreply, state}
+    end
+  end
+
+  defp applicable_unit_rates(state) do
+    unit_rates = Map.get(state, :unit_rates, [])
     from = DateTime.utc_now() |> DateTime.add(-:timer.minutes(30), :millisecond)
 
-    unit_rates =
-      unit_rates
-      |> Enum.filter(fn unit_rate -> after?(unit_rate.valid_from, from) end)
-      # Only take next 24hrs worth of data
-      |> Enum.take(48)
-
-    max_value_inc_vat =
-      case Enum.max_by(unit_rates, & &1.value_inc_vat) do
-        %{value_inc_vat: value_inc_vat} -> value_inc_vat
-        nil -> 35.0
-      end
-
-    pixels_per_value = round(@height / max_value_inc_vat)
-
-    graph =
-      Graph.build(font_size: @font_size, font: @font, theme: :light)
-      |> rectangle({@width, @height}, fill: :white)
-      |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_value)
-      |> draw_current_price(hd(unit_rates), pixels_per_value)
-
-    state = Map.put(state, :graph, graph)
-
-    schedule_refresh()
-
-    {:noreply, state, push: graph}
+    unit_rates
+    |> Enum.filter(fn unit_rate -> after?(unit_rate.valid_from, from) end)
+    # Only take next 24hrs worth of data
+    |> Enum.take(48)
   end
 
   defp after?(datetime1, datetime2) do
