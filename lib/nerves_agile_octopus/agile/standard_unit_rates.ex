@@ -1,4 +1,4 @@
-defmodule NervesAgileOctopus.StandardUnitRates do
+defmodule NervesAgileOctopus.Agile.StandardUnitRates do
   use GenServer
   require Logger
 
@@ -9,14 +9,26 @@ defmodule NervesAgileOctopus.StandardUnitRates do
 
     def new, do: %State{}
 
-    def set_unit_rates(%State{} = state, unit_rates) do
-      %State{subscribers: subscribers} = state
+    def increment_attempts(%State{} = state) do
+      %State{attempts: attempts} = state
 
-      for {pid, _ref} <- subscribers do
-        notify_subscriber(pid, unit_rates)
+      %State{state | attempts: attempts + 1}
+    end
+
+    def set_unit_rates(%State{} = state, new_unit_rates) do
+      %State{subscribers: subscribers, unit_rates: old_unit_rates} = state
+
+      unless new_unit_rates == old_unit_rates do
+        for {pid, _ref} <- subscribers do
+          notify_subscriber(pid, new_unit_rates)
+        end
+
+        state = %State{state | unit_rates: new_unit_rates, attempts: 0}
+
+        {:ok, state}
+      else
+        :error
       end
-
-      %State{state | unit_rates: unit_rates, attempts: 0}
     end
 
     def add_subscriber(%State{} = state, pid) do
@@ -82,9 +94,9 @@ defmodule NervesAgileOctopus.StandardUnitRates do
   end
 
   defp fetch_unit_rates(%State{} = state) do
-    %State{attempts: attempts} = state
-
     Logger.debug(fn -> "Attempting to fetch Agile standard unit rates" end)
+
+    state = State.increment_attempts(state)
 
     with {:ok, unit_rates} <- Agile.fetch_unit_rates(),
          {:ok, results} <- Map.fetch(unit_rates, "results") do
@@ -97,29 +109,42 @@ defmodule NervesAgileOctopus.StandardUnitRates do
         "Successfully fetched Agile standard unit rates: " <> inspect(unit_rates)
       end)
 
-      state = State.set_unit_rates(state, unit_rates)
+      case State.set_unit_rates(state, unit_rates) do
+        {:ok, state} ->
+          schedule_daily_fetch()
 
-      schedule_daily_refresh()
+          {:noreply, state}
 
-      {:noreply, state}
+        :error ->
+          # Unchanged unit rate prices, try again in 30 minutes with exponential backoff
+          schedule_fetch(state, in: :timer.minutes(30))
+
+          {:noreply, state}
+      end
     else
       {:error, error} ->
         Logger.error(fn ->
           "Failed to fetch Agile standard unit rates due to: " <> inspect(error)
         end)
 
-        interval = :timer.seconds(10) * attempts * attempts
-        Logger.debug(fn -> "Schedule fetch unit rates in #{interval}ms" end)
-
-        Process.send_after(self(), :fetch_unit_rates, interval)
-
-        state = %State{state | attempts: attempts + 1}
+        schedule_fetch(state, in: :timer.seconds(10))
 
         {:noreply, state}
     end
   end
 
-  defp schedule_daily_refresh do
+  defp schedule_fetch(%State{} = state, opts) do
+    %State{attempts: attempts} = state
+
+    initial_interval = Keyword.get(opts, :in, :timer.seconds(10))
+    interval = initial_interval * attempts * attempts
+
+    Logger.debug(fn -> "Schedule fetch unit rates in #{interval}ms" end)
+
+    Process.send_after(self(), :fetch_unit_rates, interval)
+  end
+
+  defp schedule_daily_fetch do
     now = DateTime.utc_now()
 
     refresh_at =
@@ -129,7 +154,7 @@ defmodule NervesAgileOctopus.StandardUnitRates do
 
     interval = Timex.diff(refresh_at, now, :milliseconds)
 
-    Logger.debug(fn -> "Schedule daily refresh unit rates at 16:01 (in #{interval}ms)" end)
+    Logger.debug(fn -> "Schedule daily fetch unit rates at 16:01 (in #{interval}ms)" end)
 
     Process.send_after(self(), :fetch_unit_rates, interval)
   end

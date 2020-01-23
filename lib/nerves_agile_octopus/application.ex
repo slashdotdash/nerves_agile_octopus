@@ -33,7 +33,7 @@ defmodule NervesAgileOctopus.Application do
     main_viewport_config = Application.get_env(:nerves_agile_octopus, :viewport)
 
     [
-      NervesAgileOctopus.StandardUnitRates,
+      NervesAgileOctopus.Agile.StandardUnitRates,
       {Scenic, viewports: [main_viewport_config]}
     ]
   end

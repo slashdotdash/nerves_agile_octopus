@@ -4,7 +4,7 @@ defmodule NervesAgileOctopus.Scenes.Main do
   import Scenic.Primitives
 
   alias Scenic.Graph
-  alias NervesAgileOctopus.StandardUnitRates
+  alias NervesAgileOctopus.Agile.StandardUnitRates
 
   @font :roboto
   @font_size 20
