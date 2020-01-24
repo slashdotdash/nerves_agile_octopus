@@ -38,12 +38,13 @@ defmodule NervesAgileOctopus.Scenes.Main do
           nil -> 35.0
         end
 
-      pixels_per_value = round(@height / max_value_inc_vat)
+      pixels_per_block = floor(@width / length(unit_rates))
+      pixels_per_value = floor(@height / max_value_inc_vat)
 
       graph =
         Graph.build(font_size: @font_size, font: @font, theme: :light)
         |> rectangle({@width, @height}, fill: :white)
-        |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_value)
+        |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_block, pixels_per_value)
         |> draw_current_price(hd(unit_rates), pixels_per_value)
 
       state = Map.put(state, :graph, graph)
@@ -62,8 +63,8 @@ defmodule NervesAgileOctopus.Scenes.Main do
 
     unit_rates
     |> Enum.filter(fn unit_rate -> after?(unit_rate.valid_from, from) end)
-    # Only take next 24hrs worth of data
-    |> Enum.take(48)
+    # Only take next 12 hrs worth of data
+    |> Enum.take(24)
   end
 
   defp after?(datetime1, datetime2) do
@@ -93,16 +94,9 @@ defmodule NervesAgileOctopus.Scenes.Main do
       translate: {15, 15},
       text_align: :left
     )
-
-    # |> text("#{from}-#{to}",
-    #   font_size: 12,
-    #   fill: :black,
-    #   translate: {40, 15},
-    #   text_align: :left
-    # )
   end
 
-  defp plot_chart(graph, unit_rates, max_value_inc_vat, pixels_per_value) do
+  defp plot_chart(graph, unit_rates, max_value_inc_vat, pixels_per_block, pixels_per_value) do
     graph =
       [0, 5, 10, 15, 20, 25, 30, 35]
       |> Enum.filter(&(&1 <= max_value_inc_vat))
@@ -125,16 +119,22 @@ defmodule NervesAgileOctopus.Scenes.Main do
     |> Enum.reduce(graph, fn {unit_rate, index}, graph ->
       height = round(unit_rate.value_inc_vat * pixels_per_value)
 
-      fill =
-        cond do
-          unit_rate.value_inc_vat >= 20 -> :red
-          unit_rate.value_inc_vat >= 8 -> :black
-          true -> :white
-        end
+      rectangle = {pixels_per_block, -height}
+      translate = {index * pixels_per_block, @height}
 
-      graph
-      |> rectangle({4, -height}, t: {index * 4, @height}, fill: fill)
-      |> rectangle({4, -height}, t: {index * 4, @height}, stroke: {1, :black})
+      cond do
+        unit_rate.value_inc_vat >= 20 ->
+          rectangle(graph, rectangle, t: translate, fill: :red)
+
+        unit_rate.value_inc_vat >= 8 ->
+          rectangle(graph, rectangle, t: translate, fill: :black)
+
+        true ->
+          graph
+          |> rectangle(rectangle, t: translate, fill: :white)
+          # Black border around white block
+          |> rectangle(rectangle, t: translate, stroke: {1, :black})
+      end
     end)
   end
 

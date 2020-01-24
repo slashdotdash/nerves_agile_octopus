@@ -12,7 +12,7 @@ Not yet an Octopus Energy customer? You can [sign up using this referral link to
 
 ### How does it work?
 
-Agile prices are fetched from the Octopus API each day at 16:01. Prices for the next 24hrs, in half hourly blocks, are shown. The left hand block is the current price which is also labelled with the time period. The display is updated every half an hour.
+Agile prices are fetched from the Octopus API each day at 16:01. Prices for the next 12 hrs, in half hourly blocks, are shown. The left hand block is the current price which is also labelled with the time period. The display is updated every half an hour.
 
 Each time block is coloured based upon its electricity cost:
 
