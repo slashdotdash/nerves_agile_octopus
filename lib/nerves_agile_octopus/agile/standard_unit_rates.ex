@@ -18,7 +18,7 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
     def set_unit_rates(%State{} = state, new_unit_rates) do
       %State{subscribers: subscribers, unit_rates: old_unit_rates} = state
 
-      unless new_unit_rates == old_unit_rates do
+      unless new_unit_rates == [] || new_unit_rates == old_unit_rates do
         for {pid, _ref} <- subscribers do
           notify_subscriber(pid, new_unit_rates)
         end
@@ -150,11 +150,11 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
     refresh_at =
       now
       |> Timex.add(Timex.Duration.from_days(1))
-      |> Timex.set(hour: 16, minute: 1, second: 0)
+      |> Timex.set(hour: 18, minute: 0, second: 0)
 
     interval = Timex.diff(refresh_at, now, :milliseconds)
 
-    Logger.debug(fn -> "Schedule daily fetch unit rates at 16:01 (in #{interval}ms)" end)
+    Logger.debug(fn -> "Schedule daily fetch unit rates at 18:00 (in #{interval}ms)" end)
 
     Process.send_after(self(), :fetch_unit_rates, interval)
   end

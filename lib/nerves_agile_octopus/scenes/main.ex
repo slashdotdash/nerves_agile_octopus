@@ -45,7 +45,7 @@ defmodule NervesAgileOctopus.Scenes.Main do
         Graph.build(font_size: @font_size, font: @font, theme: :light)
         |> rectangle({@width, @height}, fill: :white)
         |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_block, pixels_per_value)
-        |> draw_current_price(hd(unit_rates), pixels_per_value)
+        |> draw_current_price(hd(unit_rates), pixels_per_block, pixels_per_value)
 
       state = Map.put(state, :graph, graph)
 
@@ -75,9 +75,9 @@ defmodule NervesAgileOctopus.Scenes.Main do
     end
   end
 
-  defp draw_current_price(graph, nil, _pixels_per_value), do: graph
+  defp draw_current_price(graph, nil, _pixels_per_block, _pixels_per_value), do: graph
 
-  defp draw_current_price(graph, unit_rate, pixels_per_value) do
+  defp draw_current_price(graph, unit_rate, pixels_per_block, pixels_per_value) do
     %{value_inc_vat: value_inc_vat} = unit_rate
 
     y = @height - round(value_inc_vat * pixels_per_value)
@@ -85,13 +85,15 @@ defmodule NervesAgileOctopus.Scenes.Main do
     {:ok, from} = Timex.format(unit_rate.valid_from, "{h24}:{m}")
     {:ok, to} = Timex.format(unit_rate.valid_to, "{h24}:{m}")
 
+    x = floor(pixels_per_block / 2)
+
     graph
-    |> line({{2, 10}, {2, y}}, stroke: {1, :black})
-    |> line({{2, 10}, {15, 10}}, stroke: {1, :black})
-    |> text("#{value_inc_vat}p  #{from}-#{to}",
+    |> line({{x, 10}, {x, y}}, stroke: {1, :black})
+    |> line({{x, 10}, {x + 10, 10}}, stroke: {1, :black})
+    |> text("#{Float.round(value_inc_vat, 2)}p  #{from}-#{to}",
       font_size: 16,
       fill: :black,
-      translate: {15, 15},
+      translate: {x + 10, 15},
       text_align: :left
     )
   end
