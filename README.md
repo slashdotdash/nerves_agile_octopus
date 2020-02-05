@@ -75,14 +75,14 @@ Once the nerves device is running and connected to the network you can push new 
 First, generate an `upload.sh` script:
 
 ```
-export MIX_TARGET=my_target
+export MIX_TARGET=rpi
 mix firmware.gen.script
 ```
 
 Then build a firmware image and upload it to the target device via SSH:
 
 ```
-export MIX_TARGET=my_target
+export MIX_TARGET=rpi
 mix deps.get
 mix firmware
 ./upload.sh

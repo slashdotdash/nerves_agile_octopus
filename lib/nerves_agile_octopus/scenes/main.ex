@@ -38,6 +38,8 @@ defmodule NervesAgileOctopus.Scenes.Main do
           nil -> 35.0
         end
 
+      max_value_inc_vat = max(max_value_inc_vat, 24)
+
       pixels_per_block = floor(@width / length(unit_rates))
       pixels_per_value = floor(@height / max_value_inc_vat)
 
