@@ -29,6 +29,7 @@ Running on an Inky pHAT red display connected to a Raspberry Pi 2 Model B.
 ## Prerequisites
 
 - Install Elixir.
+- [Install Nerves](https://hexdocs.pm/nerves/installation.html).
 - Supported [nerves device](https://nerves-project.org/) (e.g. a Raspberry Pi) - _or you can just run it locally_.
 
 ### Configure wireless networking
@@ -68,7 +69,7 @@ MIX_TARGET=<target> mix do deps.get, firmware, firmware.burn
 
 Now put the SD card into your device and turn it on.
 
-### Deploying firmware to host device via SSH
+### Deploying firmware to target device via SSH
 
 Once the nerves device is running and connected to the network you can push new firmware updates using SSH. It's much quicker than burning to an SD card.
 
@@ -88,7 +89,7 @@ mix firmware
 ./upload.sh
 ```
 
-### Running locally
+### Running on local host
 
 A simulation of the Inky pHAT display can be run locally for convenience of development and testing.
 

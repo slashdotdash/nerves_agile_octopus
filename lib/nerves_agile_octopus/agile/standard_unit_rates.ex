@@ -117,7 +117,7 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
 
         :error ->
           # Unchanged unit rate prices, try again in 30 minutes with exponential backoff
-          schedule_fetch(state, in: :timer.minutes(30))
+          schedule_fetch(state, in: :timer.minutes(30), max: :timer.hours(1))
 
           {:noreply, state}
       end
@@ -127,7 +127,8 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
           "Failed to fetch Agile standard unit rates due to: " <> inspect(error)
         end)
 
-        schedule_fetch(state, in: :timer.seconds(10))
+        # Try again after 10s, with exponential backoff
+        schedule_fetch(state, in: :timer.seconds(10), max: :timer.hours(1))
 
         {:noreply, state}
     end
@@ -138,6 +139,12 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
 
     initial_interval = Keyword.get(opts, :in, :timer.seconds(10))
     interval = initial_interval * attempts * attempts
+
+    interval =
+      case Keyword.get(opts, :max) do
+        nil -> interval
+        max -> min(interval, max)
+      end
 
     Logger.debug(fn -> "Schedule fetch unit rates in #{interval}ms" end)
 
