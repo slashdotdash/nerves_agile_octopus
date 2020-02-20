@@ -154,14 +154,22 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
   defp schedule_daily_fetch do
     now = DateTime.utc_now()
 
+    # Refresh daily at 6pm
+    refresh_at = Timex.set(now, hour: 18, minute: 0, second: 0)
+
     refresh_at =
-      now
-      |> Timex.add(Timex.Duration.from_days(1))
-      |> Timex.set(hour: 18, minute: 0, second: 0)
+      if Timex.after?(refresh_at, now) do
+        refresh_at
+      else
+        Timex.add(refresh_at, Timex.Duration.from_days(1))
+      end
 
     interval = Timex.diff(refresh_at, now, :milliseconds)
 
-    Logger.debug(fn -> "Schedule daily fetch unit rates at 18:00 (in #{interval}ms)" end)
+    Logger.debug(fn ->
+      "Schedule daily fetch unit rates at " <>
+        Timex.format!(refresh_at, "{h24}:{m}") <> " (in #{interval}ms)"
+    end)
 
     Process.send_after(self(), :fetch_unit_rates, interval)
   end
