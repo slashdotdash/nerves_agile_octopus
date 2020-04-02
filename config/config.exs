@@ -6,6 +6,7 @@
 import Config
 
 config :nerves_agile_octopus, target: Mix.target()
+config :nerves_agile_octopus, timezone: "Europe/London"
 
 # Customize non-Elixir parts of the firmware. See
 # https://hexdocs.pm/nerves/advanced-configuration.html for details.

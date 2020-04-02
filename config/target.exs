@@ -1,6 +1,6 @@
 import Config
 
-config :nerves_agile_octopus, :fetch_unit_rates, NervesAgileOctopus.Agile.ApiImpl
+config :nerves_agile_octopus, fetch_unit_rates: NervesAgileOctopus.Agile.ApiImpl
 
 config :nerves_agile_octopus, :viewport, %{
   name: :main_viewport,

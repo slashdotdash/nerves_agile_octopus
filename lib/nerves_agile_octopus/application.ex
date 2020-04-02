@@ -31,9 +31,10 @@ defmodule NervesAgileOctopus.Application do
 
   def children(_target) do
     main_viewport_config = Application.get_env(:nerves_agile_octopus, :viewport)
+    timezone = Application.get_env(:nerves_agile_octopus, :timezone)
 
     [
-      NervesAgileOctopus.Agile.StandardUnitRates,
+      {NervesAgileOctopus.Agile.StandardUnitRates, timezone: timezone},
       {Scenic, viewports: [main_viewport_config]}
     ]
   end

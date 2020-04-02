@@ -15,7 +15,12 @@ defmodule NervesAgileOctopus.Scenes.Main do
   def init(_args, _opts) do
     :ok = StandardUnitRates.subscribe_unit_rates()
 
-    {:ok, %{unit_rates: []}}
+    state = %{
+      timezone: Application.get_env(:nerves_agile_octopus, :timezone, "Etc/UTC"),
+      unit_rates: []
+    }
+
+    {:ok, state}
   end
 
   @impl Scenic.Scene
@@ -30,6 +35,7 @@ defmodule NervesAgileOctopus.Scenes.Main do
 
   defp render_unit_rates(state) do
     unit_rates = applicable_unit_rates(state)
+    timezone = Map.fetch!(state, :timezone)
 
     unless unit_rates == [] do
       max_value_inc_vat =
@@ -40,6 +46,7 @@ defmodule NervesAgileOctopus.Scenes.Main do
 
       max_value_inc_vat = max(max_value_inc_vat, 24)
 
+      current_unit_rate = hd(unit_rates)
       pixels_per_block = floor(@width / length(unit_rates))
       pixels_per_value = floor(@height / max_value_inc_vat)
 
@@ -47,7 +54,7 @@ defmodule NervesAgileOctopus.Scenes.Main do
         Graph.build(font_size: @font_size, font: @font, theme: :light)
         |> rectangle({@width, @height}, fill: :white)
         |> plot_chart(unit_rates, max_value_inc_vat, pixels_per_block, pixels_per_value)
-        |> draw_current_price(hd(unit_rates), pixels_per_block, pixels_per_value)
+        |> draw_current_price(current_unit_rate, pixels_per_block, pixels_per_value, timezone)
 
       state = Map.put(state, :graph, graph)
 
@@ -64,8 +71,8 @@ defmodule NervesAgileOctopus.Scenes.Main do
     from = DateTime.utc_now() |> DateTime.add(-:timer.minutes(30), :millisecond)
 
     unit_rates
-    |> Enum.filter(fn unit_rate -> after?(unit_rate.valid_from, from) end)
-    # Only take next 12 hrs worth of data
+    |> Enum.filter(fn %{valid_from: valid_from} -> after?(valid_from, from) end)
+    # Only take next 12 hrs worth of half-hourly data (24 values)
     |> Enum.take(24)
   end
 
@@ -77,15 +84,15 @@ defmodule NervesAgileOctopus.Scenes.Main do
     end
   end
 
-  defp draw_current_price(graph, nil, _pixels_per_block, _pixels_per_value), do: graph
+  defp draw_current_price(graph, nil, _pixels_per_block, _pixels_per_value, _timezone), do: graph
 
-  defp draw_current_price(graph, unit_rate, pixels_per_block, pixels_per_value) do
-    %{value_inc_vat: value_inc_vat} = unit_rate
+  defp draw_current_price(graph, unit_rate, pixels_per_block, pixels_per_value, timezone) do
+    %{valid_from: valid_from, valid_to: valid_to, value_inc_vat: value_inc_vat} = unit_rate
 
     y = @height - round(value_inc_vat * pixels_per_value)
 
-    {:ok, from} = Timex.format(unit_rate.valid_from, "{h24}:{m}")
-    {:ok, to} = Timex.format(unit_rate.valid_to, "{h24}:{m}")
+    {:ok, from} = Timex.to_datetime(valid_from, timezone) |> Timex.format("{h24}:{m}")
+    {:ok, to} = Timex.to_datetime(valid_to, timezone) |> Timex.format("{h24}:{m}")
 
     x = floor(pixels_per_block / 2)
 
@@ -121,16 +128,18 @@ defmodule NervesAgileOctopus.Scenes.Main do
     unit_rates
     |> Enum.with_index()
     |> Enum.reduce(graph, fn {unit_rate, index}, graph ->
-      height = round(unit_rate.value_inc_vat * pixels_per_value)
+      %{value_inc_vat: value_inc_vat} = unit_rate
+
+      height = round(value_inc_vat * pixels_per_value)
 
       rectangle = {pixels_per_block, -height}
       translate = {index * pixels_per_block, @height}
 
       cond do
-        unit_rate.value_inc_vat >= 20 ->
+        value_inc_vat >= 20 ->
           rectangle(graph, rectangle, t: translate, fill: :red)
 
-        unit_rate.value_inc_vat >= 8 ->
+        value_inc_vat >= 8 ->
           rectangle(graph, rectangle, t: translate, fill: :black)
 
         true ->

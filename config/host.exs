@@ -3,7 +3,7 @@ import Config
 config :logger, :console, level: :debug
 config :logger, backends: [:console]
 
-config :nerves_agile_octopus, :fetch_unit_rates, NervesAgileOctopus.Agile.FileImpl
+config :nerves_agile_octopus, fetch_unit_rates: NervesAgileOctopus.Agile.FileImpl
 
 config :nerves_agile_octopus, :viewport, %{
   name: :main_viewport,

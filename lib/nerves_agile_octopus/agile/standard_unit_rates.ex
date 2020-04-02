@@ -5,9 +5,13 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
   alias NervesAgileOctopus.Agile
 
   defmodule State do
-    defstruct unit_rates: [], subscribers: [], attempts: 0
+    defstruct [:timezone, unit_rates: [], subscribers: [], attempts: 0]
 
-    def new, do: %State{}
+    def new(opts) do
+      %State{
+        timezone: Keyword.fetch!(opts, :timezone)
+      }
+    end
 
     def increment_attempts(%State{} = state) do
       %State{attempts: attempts} = state
@@ -60,8 +64,8 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
     end
   end
 
-  def start_link(_init_arg) do
-    GenServer.start_link(__MODULE__, State.new(), name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, State.new(opts), name: __MODULE__)
   end
 
   def subscribe_unit_rates(timeout \\ 5000) do
@@ -111,7 +115,7 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
 
       case State.set_unit_rates(state, unit_rates) do
         {:ok, state} ->
-          schedule_daily_fetch()
+          schedule_daily_fetch(state)
 
           {:noreply, state}
 
@@ -151,8 +155,10 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
     Process.send_after(self(), :fetch_unit_rates, interval)
   end
 
-  defp schedule_daily_fetch do
-    now = DateTime.utc_now()
+  defp schedule_daily_fetch(%State{} = state) do
+    %State{timezone: timezone} = state
+
+    now = Timex.now(timezone)
 
     # Refresh daily at 6pm
     refresh_at = Timex.set(now, hour: 18, minute: 0, second: 0)
@@ -166,9 +172,16 @@ defmodule NervesAgileOctopus.Agile.StandardUnitRates do
 
     interval = Timex.diff(refresh_at, now, :milliseconds)
 
+    duration =
+      interval
+      |> Timex.Duration.from_milliseconds()
+      |> Timex.Format.Duration.Formatters.Humanized.format()
+
     Logger.debug(fn ->
-      "Schedule daily fetch unit rates at " <>
-        Timex.format!(refresh_at, "{h24}:{m}") <> " (in #{interval}ms)"
+      "Schedule daily fetch unit rates in " <>
+        duration <>
+        " at " <>
+        Timex.format!(refresh_at, "{h24}:{m}")
     end)
 
     Process.send_after(self(), :fetch_unit_rates, interval)
